@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html lang="en">
+<html>
+	<head>
+		<title>CCPEM-3D Viewer</title>
+		<script src="{% static 'view3D/bower_components/webcomponentsjs/webcomponents-lite.js' %}"></script>
+		<link rel="import" href="{% static 'view3D/bower_components/polymer/polymer.html' %}">
+		<link rel="import" href="{% static 'view3D/three-renderer.html' %}">
+		<link rel="import" href="{% static 'view3D/bower_components/iron-ajax/iron-ajax.html' %}">
+		<link rel="import" href="{% static 'view3D/bower_components/paper-slider/paper-slider.html' %}">
+		<link rel="import" href="{% static 'view3D/bower_components/paper-toggle-button/paper-toggle-button.html' %}">
+		<link rel="import" href="{% static 'view3D/bower_components/iron-flex-layout/iron-flex-layout.html' %}">
+		<link rel="import" href="{% static 'view3D/bower_components/iron-selector/iron-selector.html' %}">
+		<link rel="import" href="{% static 'view3D/bower_components/paper-swatch-picker/paper-swatch-picker.html' %}">
+		<link rel="import" href="{% static 'view3D/bower_components/paper-checkbox/paper-checkbox.html' %}">
+		<link rel="import" href="{% static 'view3D/bower_components/web-animations-js/web-animations.html' %}">
+		<link rel="import" href="{% static 'view3D/bower_components/web-animations-js/paper-listbox.html' %}">
+	</head>
+	<body>
+		<form method="post" enctype="multipart/form-data">
+			{% csrf_token %}
+			{{ form }}
+			<input type="submit" value="View">
+		</form>
+		{% if not image_file %}
+			<p>No file present. Please upload one then click 'view'.</p>
+		{% else %}
+			<p> 
+				<!-- <img src="/static/view3D/images/{{ image_file }}" title="{{ image_file }}"> -->
+				<webgl-viewer meshurl="/static/view3d/images/{{ image_file }}"></webgl-viewer>
+			</p>
+		{% endif %}
+	</body>
+</html>
