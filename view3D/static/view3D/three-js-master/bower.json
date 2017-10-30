@@ -1,0 +1,21 @@
+{
+  "name": "three-js",
+  "version": "1.2.2",
+  "authors": [
+    "Aki Rodic <aleksandar.xyz@gmail.com>"
+  ],
+  "description": "HTML import for three.js library",
+  "main": "three.html",
+  "keywords": [
+    "three-js", "threejs", "three", "three.js", "3d", "webgl", "polymer", "element", "web-components"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#~1.2.2",
+    "io-vector": "arodic/io-vector#~1.2.2",
+    "three.js": "mrdoob/three.js#r73"
+  }
+}
