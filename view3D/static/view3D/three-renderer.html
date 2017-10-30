@@ -1,5 +1,4 @@
 <link rel="import" href="three-js-master/three-js.html">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.0/jquery.min.js"></script>
 
 <!--
 Three.js viewport element with basic camera controls and tool API.
@@ -7,36 +6,23 @@ Three.js viewport element with basic camera controls and tool API.
 @demo demo/index.html Basic Demo
 -->
 <dom-module id="three-renderer">
-  <!--link rel="import" type="css" href="three-renderer.css"-->
-  <template>
-    <style>
-    :host{
-      padding: 0px;
-    }
-    </style>
-    <content></content>
-  </template>
+    <template>
+        <style>
+            :host {
+                padding: 0px;
+            }
+        </style>
+        <content></content>
+    </template>
 </dom-module>
 <script>
     Polymer({
         is: 'three-renderer',
         properties: {
-            meshurl: {
-                type: String,
-                value: '',
-                //notify: true,
-                //observer: 'iniload'
-            },
-            pdbemodelurls: {
-                type: Array,
-                value: [],
-                //observer: 'iniloadModel'
-                observer: 'iniload'
-            },
-            currentEntry: {
+            filePath: {
                 type: String,
                 notify: true,
-                // observer: 'iniload'
+                observer: 'iniload'
             },
             wireframe: {
                 type: Boolean,
@@ -62,7 +48,7 @@ Three.js viewport element with basic camera controls and tool API.
                 type: Boolean,
                 observer: 'switchClipped'
             },
-            nearClipPlane:{
+            nearClipPlane: {
                 value: 0.5,
                 notify: true,
                 observer: 'changeNearClipPlane'
@@ -72,161 +58,99 @@ Three.js viewport element with basic camera controls and tool API.
                 notify: true,
                 observer: 'changeFarClipPlane'
             },
-            materialProperties:{
+            materialProperties: {
                 type: Object,
                 notify: true,
                 value: {
                     color: '#303f9f',
                     wireframe: false, //change for demo
-                    opacity:    1.0,
+                    opacity: 1.0,
                     transparent: false,
-                    blending : THREE["NormalBlending"],
+                    blending: THREE["NormalBlending"],
                     side: THREE.DoubleSide,
                     depthWrite: true,
                     depthTest: true,
-                    clippingPlanes:[],
+                    clippingPlanes: [],
                     clipShadows: true,
                 }
-            },
-            hostAttributes: {
-                // Attribute necessary to translate object with right click
-                oncontextmenu: "return false;"
-            },
-            isModelRequired: {
-                type: Boolean,
-                value: true,
-                notify: true,
-                observer: 'toggleModel'
-            },
-            fitModelIds:{
-            	type:String,
-            	value:"bb"
-            },
-            id:{
-            	type:String
-            },
-            resizeFlag:{
-            	type:Boolean,
-            	value:false,
-            	notify:true,
-            	observer: 'flagResize'
-            },
-            env: {
-                type: String,
-                value: 'prod',
-                notify: true
-            },
-            mapSpatialLength: {
-                type: Number,
-            },
-            mapSpatialStart: {
-                type: Number,
-            },
-            mapSpatialColumns: {
-                type: Number,
-                value: 0
-            },
+            }
         },
-        flagResize: function(){
-        	if(this.scene)
-        		if(this.resizeFlag)
-        			this.renderer.setSize(800, (2/3) * 800);
-        		else
-        			this.renderer.setSize(290, (2/3) * 290);
-        },
-        switchWireframe: function(){
-            if(this.scene && this.materialProperties){
+        switchWireframe: function () {
+            if (this.scene && this.materialProperties) {
                 var mesh = this.scene.getObjectByName('mesh');
                 mesh.material.wireframe = this.wireframe;
                 this.materialProperties.wireframe = this.wireframe;
             }
         },
-        switchClipped: function(){
-        	if(this.scene){
-	        	var mesh = this.scene.getObjectByName('mesh');
-	            if (! this.clipped && this.camera){
-	                var vec = this.camera.getWorldDirection().normalize();
-	                mesh.material.clippingPlanes[0].normal = vec ;
-	                mesh.material.clippingPlanes[0].constant = this.nearClipPlane;
-	                this.materialProperties.clippingPlanes[0] = mesh.material.clippingPlanes[0];
-	
-	                mesh.material.clippingPlanes[1].normal = new THREE.Vector3(-vec.x, -vec.y, -vec.z);
-	                mesh.material.clippingPlanes[1].constant = -this.farClipPlane;
-	                this.materialProperties.clippingPlanes[1] = mesh.material.clippingPlanes[1];
-	            }
-	            if (this.clipped && this.camera) {
-	                mesh.material.clippingPlanes[0].constant = 500.0;
-	                this.materialProperties.clippingPlanes[0] = mesh.material.clippingPlanes[0];
-	                mesh.material.clippingPlanes[1].constant = 500.0;
-	                this.materialProperties.clippingPlanes[1] = mesh.material.clippingPlanes[1];
-	            }
-	        }
+        switchClipped: function () {
+            if (this.scene) {
+                var mesh = this.scene.getObjectByName('mesh');
+                if (!this.clipped && this.camera) {
+                    var vec = this.camera.getWorldDirection().normalize();
+                    mesh.material.clippingPlanes[0].normal = vec;
+                    mesh.material.clippingPlanes[0].constant = this.nearClipPlane;
+                    this.materialProperties.clippingPlanes[0] = mesh.material.clippingPlanes[0];
+
+                    mesh.material.clippingPlanes[1].normal = new THREE.Vector3(-vec.x, -vec.y, -vec.z);
+                    mesh.material.clippingPlanes[1].constant = -this.farClipPlane;
+                    this.materialProperties.clippingPlanes[1] = mesh.material.clippingPlanes[1];
+                }
+                if (this.clipped && this.camera) {
+                    mesh.material.clippingPlanes[0].constant = 500.0;
+                    this.materialProperties.clippingPlanes[0] = mesh.material.clippingPlanes[0];
+                    mesh.material.clippingPlanes[1].constant = 500.0;
+                    this.materialProperties.clippingPlanes[1] = mesh.material.clippingPlanes[1];
+                }
+            }
         },
-        changeNearClipPlane: function(){
-            if(this.scene){
-            	var mesh = this.scene.getObjectByName('mesh');
+        changeNearClipPlane: function () {
+            if (this.scene) {
+                var mesh = this.scene.getObjectByName('mesh');
                 mesh.material.clippingPlanes[0].constant = this.nearClipPlane;
             }
         },
-        changeFarClipPlane: function(){
-            if(this.scene){
+        changeFarClipPlane: function () {
+            if (this.scene) {
                 var mesh = this.scene.getObjectByName('mesh');
                 mesh.material.clippingPlanes[1].constant = -this.farClipPlane;
             }
 
         },
-        changeMapColour: function(){
-            if (this.scene){
-                var newColor = parseInt('0x' + this.mapColour.slice(1,7));
+        changeMapColour: function () {
+            if (this.scene) {
+                var newColor = parseInt('0x' + this.mapColour.slice(1, 7));
                 var mesh = this.scene.getObjectByName('mesh');
                 mesh.material.color.setHex(newColor);
                 this.materialProperties.color = newColor;
             }
         },
-        changeBackgroundColour: function(){
-            if (this.scene){
-                var newColor = parseInt('0x'+this.bkgColour.slice(1,7));
+        changeBackgroundColour: function () {
+            if (this.scene) {
+                var newColor = parseInt('0x' + this.bkgColour.slice(1, 7));
                 this.renderer.setClearColor(newColor);
             }
         },
-        changeAlphaChannel: function(){
-            if (this.scene && this.materialProperties){
-            	var mesh = this.scene.getObjectByName('mesh');
+        changeAlphaChannel: function () {
+            if (this.scene && this.materialProperties) {
+                var mesh = this.scene.getObjectByName('mesh');
                 this.materialProperties.opacity = this.alpha;
                 mesh.material.opacity = this.alpha;
-                if(this.alpha >= 1.0){
+                if (this.alpha >= 1.0) {
                     mesh.material.transparent = false;
                     mesh.material.depthTest = true;
                     mesh.material.depthWrite = true;
                 }
-                else{
+                else {
                     mesh.material.transparent = true;
                     mesh.material.depthTest = false;
                     mesh.material.Write = false;
                 }
             }
         },
-        toggleModel: function(){
-        	if(this.scene)
-        		{
-					/* var lineGeometryIndex = 1;
-        			this.pdbemodelurls.forEach(function (url, position) {
-						if (url.endsWith('sch'))
-							lineGeometryIndex = position;
-					});
-        			this.modelObjects[1].visible = this.isModelRequired; */
-        			
-         			var children = document.getElementById('modelListItem').children;
-        			for(var i=0;i<children.length;i++){
-        				this.modelObjects[i].visible = children[i].checked;
-        			}
-        		}
-        },
-        ready: function() {
+        iniload: function () {
             var directionalLight;
             this.loader = new THREE.VTKLoader();
-
-            this.camera = new THREE.PerspectiveCamera(35, 600/400, 0.1, 1200);
+            this.camera = new THREE.PerspectiveCamera(35, 600 / 400, 0.1, 1200);
             this.camera.position.set(400, 0, 0);
             this.scene = new THREE.Scene();
             directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -248,7 +172,7 @@ Three.js viewport element with basic camera controls and tool API.
 
             this.renderer = threeRendererNew;
             this.renderer.setClearColor('#000000');
-            this.renderer.setSize(290, (2/3) * 290);
+            this.renderer.setSize(800, (2 / 3) * 800);
             this.renderer.gammaInput = true;
             this.renderer.gammaOutput = true;
             this.renderer.shadowMap.enabled = true;
@@ -256,292 +180,51 @@ Three.js viewport element with basic camera controls and tool API.
             this.renderer.sortObjects = true;
             this.renderer.localClippingEnabled = true;
             this.renderer.render(this.scene, this.camera);
+            var material = new THREE.MeshLambertMaterial(this.materialProperties);
 
-            this.isFirstLoad = true;
-            this.isFirstModelLoad = true;
-        },
-        iniload: function(){
-        	var pdbemodelurls = [];
+            var controls, mesh, nearPlane, farPlane;
+            var that = this;
+            var url = this.filePath;
 
-        	// this.camera = new THREE.PerspectiveCamera(35, 600/400, 0.1, 1200);
-        	// this.camera.position.set(this.mapSpatialLength, 0, 0);
-        	if ( this.pdbemodelurls !== undefined && this.pdbemodelurls.length > 0 ) {
-            	pdbemodelurls = this.pdbemodelurls;
-	            this.modelObjects = new Array();
-	            var material = new THREE.MeshLambertMaterial(this.materialProperties);
-	            
-	            var controls, mesh, nearPlane, farPlane;
-	            var that = this; // Keep additional reference to the polymer element
-	            var url = this.pdbemodelurls[0];
-	            //alert(url);
-	
-	            if (url === undefined || url === ''){
-	                return;
-	            }
-	
-	            if (this.isFirstLoad){
-	            	var rendererCanvas = document.getElementsByTagName("canvas");
-	                if ( rendererCanvas.length < 1 )
-	                	this.appendChild(this.renderer.domElement);
-	                this.loader.load(url, function (geoa) {
-	                	that.offset = geoa.center();
-	                	geoa.computeBoundingBox();
-	                	nearPlane = new THREE.Plane(new THREE.Vector3(1,  0,  0), 100);
-	                    material.clippingPlanes[0] = nearPlane;
-	
-	                    farPlane = new THREE.Plane(new THREE.Vector3(1,  0,  0), 100);
-	                    material.clippingPlanes[1] = farPlane;
-	
-	                    mesh = new THREE.Mesh(geoa, material);
-	                    mesh.name = "mesh";
-	                    mesh.position.set(0.0, 0.0, 0.0);
-	                    mesh.rotation.set(0, Math.PI / 2, 0);
-	                    that.scene.add(mesh);
-	                    var totalLength = that.mapSpatialLength - (that.mapSpatialStart) + (that.mapSpatialColumns);
-	                    that.camera.position.set(totalLength, 0, 0);
-	                    controls = new THREE.TrackballControls(that.camera, that.renderer.domElement);
-	                    controls.target.set(0, 0, 0);
-	                    controls.rotateSpeed = 1.5;
-	                    controls.zoomSpeed = 0.5;
-	                    controls.panSpeed = 0.8;
-	                    controls.noZoom = false;
-	                    controls.noPan = false;
-	                    controls.staticMoving = true;
-	                    controls.dynamicDampingFactor = 0.3;
-	                    controls.keys = [65, 83, 68];
-	
-	                    function animate (){
-	                        requestAnimationFrame(animate);
-	                        controls.update();
-	                        that.renderer.render(that.scene,that.camera);
-	                    }
-	                    animate();
-	                    
-	                    
-	                    
-	                    if (that.pdbemodelurls.length > 1) {
-		            	that.modelLoader = new THREE.OAVLoader();
-		            	
-			            that.modelObjects = new Array();
-			
-			            var pdbemodelurls = that.pdbemodelurls;
-			
-			            var rendererCanvas = document.getElementsByTagName("canvas");
-			            if ( rendererCanvas.length < 1 )
-		                	that.appendChild(that.renderer.domElement);
-		                var validModelCount = 1;
-		                var internalCounter = 0;
+            var rendererCanvas = document.getElementsByTagName("canvas");
+            if (rendererCanvas.length < 1)
+                this.appendChild(this.renderer.domElement);
+            this.loader.load(url, function (geoa) {
+                that.offset = geoa.center();
+                geoa.computeBoundingBox();
+                nearPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 100);
+                material.clippingPlanes[0] = nearPlane;
 
-						for (var model_index = 1; model_index < that.pdbemodelurls.length; model_index++) {
-							
-							var model_indexx = model_index;
-			                if(model_indexx == 1)
-								that.fitModelIds += pdbemodelurls[model_indexx].split('_')[1];
-							else
-								that.fitModelIds += ',' + pdbemodelurls[model_indexx].split('_')[1];
-			                
-							var currentUrl = pdbemodelurls[model_indexx];
-							that.modelLoader.load(currentUrl , function ( geometry, geometryBonds, positionBonds, json ) {
-								
-								that.modelObjects.push(new THREE.Group());
-								/* if(internalCounter == 0)
-									that.fitModelIds += currentUrl;
-								else
-									that.fitModelIds += ',' + currentUrl; */
-								
-								while ( that.modelObjects[internalCounter].children.length > 0 ) {
-									var object = that.modelObjects[internalCounter].children[ 0 ];
-									object.parent.remove( object );
-								} 
-								
- 								positions = geometry.getAttribute( 'position' );	                    
-			                    
-			                    var material = new THREE.LineBasicMaterial({
-			        				color: 0xffffff
-			        				//wireframe: true
-			        				});
+                farPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 100);
+                material.clippingPlanes[1] = farPlane;
 
-			        				var lineGeometry = new THREE.Geometry();
-			        				var currentChainId = positionBonds[0];
-			        				var currentSequenceId = positionBonds[1] - 1;
-			        				var currentColor = getChainColor(currentChainId);
-			        				var colorIndex = 0;
-			        				//Line model
-			        							        				
- 			        				for ( var i = 0; i < positions.count; i++ ) {
-			        					var line;
-			        					if(!(currentChainId == positionBonds[i*2] && i != positions.count -1 && (currentSequenceId + 1)  == positionBonds[(i*2) + 1]))
-			        					{	
-											line = new THREE.Line( lineGeometry, material );
- 			        						if(currentChainId != positionBonds[i*2])
- 			        							currentColor = getChainColor(positionBonds[i*2]);
- 			        						line.material.color = new THREE.Color( currentColor);
-			        						that.modelObjects[internalCounter].add( line );
-			        						lineGeometry = new THREE.Geometry();
-			        						material = new THREE.LineBasicMaterial();
-			        					}
-			        					lineGeometry.vertices.push(new THREE.Vector3( positions.getX( i ) + that.offset.x, positions.getY( i ) + that.offset.y, positions.getZ( i ) + that.offset.z ));
-			        					currentChainId = positionBonds[i*2];
-			        					currentSequenceId = positionBonds[(i*2) + 1];
-			        				}
-			        					
-			        					that.modelObjects[internalCounter].rotation.set(0, Math.PI / 2, 0);
-			        					that.scene.add( that.modelObjects[internalCounter] );
-			        					internalCounter = internalCounter + 1;
-			        					console.log(that.modelObjects);
-											
-								}, function ( xhr ) {
-			
-								if ( xhr.lengthComputable ) {
-			
-									var percentComplete = xhr.loaded / xhr.total * 100;
-									console.log( Math.round( percentComplete, 2 ) + '% downloaded' );
-			
-								}
-			
-							}, function ( xhr ) {
-								var forbiddenModels = xhr.target.responseURL.split('_')[1];
-								if (that.fitModelIds.includes(forbiddenModels + ","))
-									that.fitModelIds = that.fitModelIds.replace(forbiddenModels + ",", "");
-								else
-									that.fitModelIds = that.fitModelIds.replace(forbiddenModels, "");
-								} );
-						}
-						that.isFirstModelLoad = false;
-		            }
-	                    that.isFirstLoad = false;
-	               });
-	            }
-	            else {
-	                this.loader.load(url, function(geoa) {
-	                    // Inside this anonymous functions, 'this' variable points to the window.
-	                    // Polymer variables are accessed through 'that' variable.
-	                    that.scene.remove(that.scene.getObjectByName('mesh'));
-	
-	                    if (that.alpha < 1.0){
-	                        material.transparent = true;
-	                        material.opacity = that.alpha;
-	                        material.depthWrite = false;
-	                        material.depthTest = false;
-	                    }
-	                    geoa.computeBoundingBox();
-	                    geoa.center()
-	                    mesh = new THREE.Mesh(geoa, material);
-	                    mesh.name = "mesh"
-	                    mesh.position.set(0.0, 0.0, 0.0);
-	                    mesh.rotation.set(0, Math.PI / 2, 0);
-	                    //scale = 100;
-	                    //mesh.scale.set(1.0/scale, 1.0/scale, 1.0/scale);
-	                    that.scene.add(mesh);
-	                })
-	            }
-	           }
-	          },
-        iniloadModel: function(){
+                mesh = new THREE.Mesh(geoa, material);
+                mesh.name = "mesh";
+                mesh.position.set(0.0, 0.0, 0.0);
+                mesh.rotation.set(0, Math.PI / 2, 0);
+                that.scene.add(mesh);
 
-        	var pdbemodelurls = [];
+                that.camera.position.set(400, 0, 0);
+                controls = new THREE.TrackballControls(that.camera, that.renderer.domElement);
+                controls.target.set(0, 0, 0);
+                controls.rotateSpeed = 1.5;
+                controls.zoomSpeed = 0.5;
+                controls.panSpeed = 0.8;
+                controls.noZoom = false;
+                controls.noPan = false;
+                controls.staticMoving = true;
+                controls.dynamicDampingFactor = 0.3;
+                controls.keys = [65, 83, 68];
 
-        	if (this.pdbemodelurls !== undefined)
-            	pdbemodelurls = this.pdbemodelurls;
+                function animate() {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    that.renderer.render(that.scene, that.camera);
+                }
 
-            if (pdbemodelurls.length > 0) {
-            	this.modelLoader = new THREE.OAVLoader();
-            	
-	            this.modelObjects = new Array();
-	            for (var model_index = 0; model_index < pdbemodelurls.length; model_index++) {
-	            	this.modelObjects.push(new THREE.Group());
-				}
-	
-				for (var model_index = 0; model_index < pdbemodelurls.length; model_index++) {
-					this.scene.add( this.modelObjects[model_index] );
-				}
-	
-	            var that = this; // Keep additional reference to the polymer element
-	            var pdbemodelurls = this.pdbemodelurls;
-	
-	            var rendererCanvas = document.getElementsByTagName("canvas");
-	            if ( rendererCanvas.length < 1 )
-                	this.appendChild(this.renderer.domElement);
-				for (var model_index = 0; model_index < pdbemodelurls.length; model_index++) {
-				    while ( this.modelObjects[model_index].children.length > 0 ) {
-						var object = this.modelObjects[model_index].children[ 0 ];
-						object.parent.remove( object );
-					}
-					
-					while ( that.modelObjects[model_index].children.length > 0 ) {
-						var object = that.modelObjects[model_index].children[ 0 ];
-						object.parent.remove( object );
-					}
-					var model_indexx = model_index;
-
-	                this.modelLoader.load( pdbemodelurls[model_indexx], function ( geometry, geometryBonds, json ) {
-	
-						var boxGeometry = new THREE.BoxBufferGeometry( 1, 1, 1 );
-	
-						var offset = geometry.center();
-						//geometryBonds.translate( offset.x, offset.y, offset.z );
-	
-						positions = geometryBonds.getAttribute( 'position' );
-	
-						var start = new THREE.Vector3();
-						var end = new THREE.Vector3();
-	
-						//alert(this.offset);
-						//var bufferGeometry = new THREE.BufferGeometry();
-						//var bufferGeometry = new THREE.Geometry();
-	                    var material = new THREE.MeshBasicMaterial({wireframe: true});
-	                    //var material = new THREE.MeshNormalMaterial({wireframe: true, color: 0xffffff});
-
-						for ( var i = 0; i < positions.count; i += 2 ) {
-							start.x = positions.getX( i );
-							start.y = positions.getY( i );
-							//start.z = positions.getZ( i ) - 18;
-							start.z = positions.getZ( i );
-	
-							end.x = positions.getX( i + 1 );
-							end.y = positions.getY( i + 1 );
-							//end.z = positions.getZ( i + 1 ) - 18;
-							end.z = positions.getZ( i + 1 );
-	
-							//start.multiplyScalar( 0.01 );
-							//end.multiplyScalar( 0.01 );
-	
-	                        var object = new THREE.Mesh( boxGeometry, material );
-							object.position.copy( start );
-							object.position.lerp( end, 0.5 );
-							//object.scale.set( 5, 5, start.distanceTo( end ) );
-							//object.scale.set( 1, 1, start.distanceTo( end ) );
-							object.scale.set( 0.003, 0.003, start.distanceTo( end ) );
-							object.lookAt( end );
-
-							that.modelObjects[model_indexx].add( object );
-						}
-						
-						that.modelObjects[model_indexx].rotation.set(0, Math.PI / 2, 0);
-						
-	
-					}, function ( xhr ) {
-	
-						if ( xhr.lengthComputable ) {
-	
-							var percentComplete = xhr.loaded / xhr.total * 100;
-							console.log( Math.round( percentComplete, 2 ) + '% downloaded' );
-							}
-	
-					}, function ( xhr ) {
-	
-					} );
-				}
-				this.isFirstModelLoad = false;
-	    	} // end of condition on the existence of related models
+                animate();
+            });
         }
     });
-    function getChainColor(chainId) {
-    	var colorList = {"0":"#0000b2","1":"#92b4f2","2":"#730073","3":"#ff87c3","4":"#D20000","5":"#ffa500","6":"#b2b200","7":"#329932","8":"#00b2b2","9":"#20b2aa","11":"#993f6c","22":"#FFB4B4","33":"#664200","44":"#ffffb2","55":"#004c00","66":"#ccffff","77":"#0c4744","88":"#b2b2ff","99":"#324a76","A":"#780000","B":"#ffdb99","C":"#ffff00","D":"#99cc99","E":"#006666","F":"#a5e0dd","G":"#000066","H":"#d0dff9","I":"#4c004c","J":"#ffb4d9","K":"#960000","L":"#ffc966","M":"#e5e500","N":"#66b266","O":"#007f7f","P":"#79d0cc","Q":"#000099","R":"#b1caf6","S":"#660066","T":"#ff96ca","U":"#B40000","V":"#ffb732","W":"#cccc00","X":"#4ca64c","Y":"#009999","Z":"#4cc1bb","a":"#0000cc","b":"#739fee","c":"#800080","d":"#ff78bb","e":"#FF0000","f":"#e59400","g":"#999900","h":"#198c19","i":"#00cccc","j":"#1ca099","k":"#0000e5","l":"#6495ed","m":"#8c198c","n":"#ff69b4","o":"#FF3232","p":"#cc8400","q":"#7f7f00","r":"#008000","s":"#00e5e5","t":"#198e88","u":"#0000ff","v":"#5a86d5","w":"#993299","x":"#e55ea2","y":"#FF5050","z":"#b27300","AA":"#666600","BB":"#007300","CC":"#00ffff","DD":"#167c76","EE":"#3232ff","FF":"#5077bd","GG":"#a64ca6","HH":"#cc5490","II":"#FF7878","JJ":"#996300","KK":"#4c4c00","LL":"#006600","MM":"#66ffff","NN":"#136a66","OO":"#4c4cff","PP":"#4668a5","QQ":"#b266b2","RR":"#b2497d","SS":"#FF9696","TT":"#7f5200","UU":"#ffff66","VV":"#005900","WW":"#99ffff","XX":"#105955","YY":"#7f7fff","ZZ":"#3c598e","00":"#bf7fbf","aa":"#cc99cc","bb":"#7f345a","cc":"#ffdb99","dd":"#ffff00","ee":"#99cc99","ff":"#006666","gg":"#a5e0dd","hh":"#000066","ii":"#d0dff9","jj":"#4c004c","kk":"#ffb4d9","ll":"#7f007f","mm":"#ffc966","nn":"#e5e500","oo":"#66b266","pp":"#007f7f","qq":"#79d0cc","rr":"#000099","ss":"#b1caf6","tt":"#660066","uu":"#ff96ca","vv":"#990099","ww":"#ffb732","xx":"#cccc00","yy":"#4ca64c","zz":"#009999"}
-    	if (chainId in colorList)
-    		return colorList[chainId];
-    	else
-    		return '#FF0000';
-    }
-    
+
 </script>

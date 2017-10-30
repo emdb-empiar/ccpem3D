@@ -1,5 +1,5 @@
-{% load static %}
-<!DOCTYPE html lang="en">
+{% load staticfiles %}
+<!DOCTYPE html>
 <html>
 	<head>
 		<title>CCPEM-3D Viewer</title>
@@ -11,10 +11,9 @@
 		<link rel="import" href="{% static 'view3D/bower_components/paper-toggle-button/paper-toggle-button.html' %}">
 		<link rel="import" href="{% static 'view3D/bower_components/iron-flex-layout/iron-flex-layout.html' %}">
 		<link rel="import" href="{% static 'view3D/bower_components/iron-selector/iron-selector.html' %}">
-		<link rel="import" href="{% static 'view3D/bower_components/paper-swatch-picker/paper-swatch-picker.html' %}">
 		<link rel="import" href="{% static 'view3D/bower_components/paper-checkbox/paper-checkbox.html' %}">
-		<link rel="import" href="{% static 'view3D/bower_components/web-animations-js/web-animations.html' %}">
-		<link rel="import" href="{% static 'view3D/bower_components/web-animations-js/paper-listbox.html' %}">
+        <link rel="import" href="{% static 'view3D/webgl-viewer.html' %}">
+
 	</head>
 	<body>
 		<form method="post" enctype="multipart/form-data">
@@ -22,12 +21,12 @@
 			{{ form }}
 			<input type="submit" value="View">
 		</form>
-		{% if not image_file %}
+        {% if not image_file %}
 			<p>No file present. Please upload one then click 'view'.</p>
 		{% else %}
-			<p> 
+			<p>
 				<!-- <img src="/static/view3D/images/{{ image_file }}" title="{{ image_file }}"> -->
-				<webgl-viewer meshurl="/static/view3d/images/{{ image_file }}"></webgl-viewer>
+				<webgl-viewer file-path="/static/view3d/images/{{ image_file }}"></webgl-viewer>
 			</p>
 		{% endif %}
 	</body>

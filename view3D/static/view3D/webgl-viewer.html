@@ -7,537 +7,227 @@
 <link rel="import" href="bower_components/iron-selector/iron-selector.html">
 <link rel="import" href="bower_components/paper-swatch-picker/paper-swatch-picker.html">
 <link rel="import" href="bower_components/paper-checkbox/paper-checkbox.html">
-<link rel="import" href="bower_components/web-animations-next/web-animations.html">
-<link rel="import" href="bower_components/web-animations-js/web-animations.html">
-<link rel="import" href="bower_components/web-animations-next/paper-dropdown-menu.html">
-<link rel="import" href="bower_components/web-animations-js/paper-listbox.html">
-<link rel="import" href="bower_components/web-animations-next/paper-item.html">
+<link rel="import" href="bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="bower_components/paper-item/paper-item.html">
 <dom-module id="webgl-viewer">
-  <template>
+    <template>
 
-   <style is="custom-style">
-        :host {
-          position: relative;
-          float: left;
-/*           width: 1000px;
-          height:850px; */
-          position: absolute;
-       	  top: 0px;
-          left: 1012px;
-      }
-
-      .renderer_div{
-          width: 1000px;
-          height: 600px;
-          float:left;
-          position: relative;
-          /*Disable focus frame*/
-          outline: none;
-          border: none;
-          /*Disable text selection*/
-          -webkit-touch-callout: none;
-          -webkit-user-select: none;
-          -khtml-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-           user-select: none;  
-      }
-      
-    .flex-horizontal {
-        @apply(--layout-horizontal);
-     }
-
-    .flexchild {
-        @apply(--layout-flex);
-     }
-
-    .title-container{
-        height:45px;
-    }
-
-    iron-selector > * {
-        padding: 8px;
-    }
-
-    .horizontal-section {
-        padding: 10px;
-    }
-    
-    .reduced-top-padding{
-    	padding-top: 0px;
-    }
-
-    .iron-selected {
-        background-color: var(--google-blue-500);
-        color: white;
-    }
-
-    #stats {
-        list-style: none;
-        padding: 0;
-
-    }
-    
-     #three-view-container {
-        background: #ededed;
-        /* border: 1px solid #888; */
-        min-width: 311px;
-        max-width: 311px;
-        float: right;
-      }
-      
-      #three-view-container-expanded{
-        background: #ededed;
-        float: right;
-      }
-      
-      #three-view-title {
-        background: #ededed;
-        padding: 10px;
-      }
-      
-      #image-placeholder{
-      	heigth:193px;
-      	width:290px;
-      	display:none;
-      }
-      paper-checkbox.blue {
-    --paper-checkbox-checked-color: var(--paper-blue-500);
-    --paper-checkbox-checked-ink-color: var(--paper-blue-500);
-    --paper-checkbox-unchecked-color: var(--paper-blue-900);
-    --paper-checkbox-unchecked-ink-color: var(--paper-blue-900);
-    --paper-checkbox-label-color: var(--paper-blue-500);
-    --paper-checkbox-label-checked-color: var(--paper-blue-900);
-  }
-   </style>
-
-   <iron-ajax
-       auto
-       url="[[apiurl]]"
-       handle-as="json"
-       last-response="{{stats}}">
-   </iron-ajax>
-   
-   <div id='three-view-container'>
-	         <div id="three-view-title" class="title-container">
-		        <h3>
-		        	<div>
-			        	3D Viewer
-				        <span class="right_aligned">
-				        	<!-- <iron-icon id="overlay-open-icon" icon="icons:open-in-new" onclick="test(this.id);backdrop.open();"></iron-icon> -->
-				        	<resize-icon id="overlay-open-icon" is-open-icon="true" resize-flag="{{resizeFlag}}"></resize-icon>
-				        	<!-- <iron-icon id="overlay-close-icon" icon="icons:close" onclick="test(this.id);backdrop.close();" style="display:none;"></iron-icon> -->
-				        	<paper-icon-button icon="settings-backup-restore" on-tap="switchhandler"></paper-icon-button>
-					   </span>
-				   </div>
-		        </h3>
-		   	</div>
-	        <div class="container flex-horizontal">
-		     <div class="horizontal-section reduced-top-padding">
-			     <div id="three-renderer-placeholder-old">
-                     <three-renderer id="three-renderer-map"
-                                     meshurl="{{ meshurl }}"
-                                     pdbemodelurls="{{ pdbemodelurls }}"
-                                     wireframe="{{ wireframe }}"
-                                     alpha="{{ alpha }}"
-                                     map-colour="{{ mapcolor }}"
-                                     bkg-colour="{{ bkgcolor }}"
-                                     clipped="{{ clipped }}"
-                                     near-clip-plane="{{ near }}"
-                                     far-clip-plane="{{ far }}"
-                                     is-model-required="{{ ismodelrequired }}"
-                                     resize-flag="{{ resizeFlag }}"
-                                     current-entry="{{ currentEntry }}"
-                                     env="{{ env }}"
-                                     map-spatial-length="{{ mapSpatialLength }}"
-                                     map-spatial-start="{{ mapSpatialStart }}"
-                                     map-spatial-columns="{{ mapSpatialColumns }}"
-                     </three-renderer>
-			     </div>
-			     <div id="image-placeholder">
-		     	 	<img src="{{path}}/images/placeholder.png" alt="Smiley face"> 
-	   			 </div>
-	  			</div>
-	 </div>
-
-	   
-	   <simple-overlay id="backdrop" with-backdrop no-cancel-on-outside-click>
-         <div id='three-view-container-expanded'>
-	         <div id="three-view-title">
-		        <h3>3D Viewer
-			        <span class="right_aligned">
-			        	<!-- <iron-icon id="overlay-open-icon" icon="icons:open-in-new" onclick="test(this.id);backdrop.open()"></iron-icon> -->
-			        	<!-- <iron-icon id="overlay-close-icon" icon="icons:close" onclick="test(this.id);backdrop.close();"></iron-icon> -->
-			        	<resize-icon id="overlay-close-icon" is-close-icon="true" resize-flag="{{resizeFlag}}"></resize-icon>
-			        	<paper-icon-button icon="settings-backup-restore" on-tap="switchhandler"></paper-icon-button>
-				   </span>
-		        </h3>
-		   	</div>
-	        <div class="container flex-horizontal">
-		     <div id="three-renderer-placeholder-new" class="horizontal-section">
-
-		     </div>
-	   		</div>
-		    <div class="container flex-horizontal">
-	     <div class="horizontal-section">
-	        Threshold
-	        <paper-slider id="threshold"
-	            pin snaps max="20"
-	            max-markers="20"
-	            step="1" value="{{sliderValue}}">
-	        </paper-slider>
-	        <ul id="stats">
-	            <li>Recommended contour level: {{dStats.rec}}</li>
-	            <li>Minimum: {{dStats.min}}</li>
-	            <li>Maximum: {{dStats.max}}</li>
-	            <li>Average: {{dStats.mean}}</li>
-	            <li>Sigma: {{dStats.sigma}}</li>
-	            <li><span>{{modelListLabel}}</span></li>
-	            <li id="modelListItem">
-		            <template id="modelListItemTemplate" is="dom-repeat" items="{{modelids}}">
-		     			<paper-checkbox class="blue" on-tap="toggleFitModel" checked ><span id="models_list">{{item}}</span></paper-checkbox>
-		     		</template>
-	     		</li>
-	        </ul>
-	
-	     </div>
-	     <div class="horizontal-section">
-	         Wireframe
-	         <paper-toggle-button on-change="wireframeChange" noink></paper-toggle-button>
-	
-	         Opacity Level
-	         <paper-slider pin value="{{alpha}}" min="0.0" max="1.0" step="0.1" ></paper-slider>
-	
-	         Map colour:
-	         <paper-swatch-picker color="{{mapcolor}}"></paper-swatch-picker>
-	
-	         Background colour:
-	         <paper-swatch-picker color="{{bkgcolor}}"></paper-swatch-picker>
-	
-	     </div>
-		 <div class="horizontal-section">
-	         Clipped view
-	         <paper-toggle-button on-change="clippedChange" noink></paper-toggle-button>
-	
-	         Clipping Front Plane
-	         <paper-slider id="clipcont" pin value="{{near}}" min="-50.0" max="50.0" step="0.01" disabled="{{clipped}}" editable></paper-slider>
-	
-	         Clipping Back Plane
-	         <paper-slider id="boxdepth" pin value="{{far}}" min="-50.0" max="50.0" step="0.01"  disabled="{{clipped}}" editable></paper-slider>
-	     </div>
-	   </div>
-       </div>
-         
-        </simple-overlay>
-   </div>
-  </template>
-
- </dom-module>
-  <script>
-
-  Polymer({
-    is: 'webgl-viewer',
-    
-    _onClick: function(){
-    	alert('test');
-    },
-
-    properties: {
-        entry: {
-        	type: String,
-        	value: null,
-        },
-        pdbemodelliststr: {
-          type: String,
-          value: "",
-          notify: true
-        },
-        thr: {
-          notify: true
-        },
-        wireframe: {
-          type: Boolean,
-          value: false,
-          notify: true
-        },
-        mapcolor: {
-            type: String,
-            value: '#303f9f',
-            notify: true
-        },
-        bkgcolor: {
-            type: String,
-            //value: '#f3e5f5',
-            value: '#9e9e9e',
-            notify: true
-        },
-        clipped: {
-          type: Boolean,
-          value: true,
-          notify: true
-        },
-        alpha: {
-          value: 1.0,
-          //value: 0.4,
-          notify: true
-        },
-        near: {
-          value: 0.5,
-          notify: true
-        },
-        far: {
-          value: -0.5,
-          notify: true
-        },
-        stats: {
-          type: Object,
-          notify: true,
-          observer: 'displayStats'
-        },
-        dStats:{
-          value:{
-              rec: '',
-              mean:'',
-              max:'',
-              sigma:'',
-              min:''
-          },
-          notify: true
-        },
-        env: {
-          type: String,
-          value: 'prod',
-          notify: true
-        },
-    	currentEntry:{
-    		type:String,
-    		notify:true,
-    		observer: 'ready'
-    	},
-        apiurl: {
-          computed: 'computeApiUrl(env, entry)'
-        },
-        meshurl: {
-          computed: 'computeMeshUrl(env, entry , thr)',
-          notify:true
-        },
-        pdbemodelurls: {
-          computed: 'computePdbeModelUrls(env, currentEntry, thr, pdbemodelliststr)'
-          //computed: 'computeMeshUrl(env, entry, thr)'
-        },
-        modelids: {
-        	computed: 'computedModelIds(pdbemodelurls)'
-        },
-		ismodelrequired: {
-            type: Boolean,
-            value: true,
-            notify: true
-        },
-        resizeFlag:{
-        	type:Boolean,
-        	value:false,
-        	notify:true
-        },
-        path:{
-        	type: String
-        },
-        modelListLabel:{
-        	type: String,
-        	computed: 'fetchInfoLable(modelids)'
-        },
-        isInitialLoad:{
-            type: Boolean,
-            value: true
-        },
-        sliderValue: {
-            notify: true,
-            observer: 'updateContourLevel'
-        },
-        mapSpatialLength: {
-            type: Number,
-            computed: 'fetchSpatialLength(currentEntry, env)'
-        },
-        mapSpatialStart: {
-            type: Number,
-            value:0
-        },
-        mapSpatialColumns: {
-            type: Number,
-            value: 0
-        },
-    },
-    switchhandler: function () {
-    	this.currentEntry = this.entry;
-        restyle(this.currentEntry);
-    },
-    toggleFitModel: function(){
-    	this.ismodelrequired = !this.ismodelrequired;
-    },
-    fetchSpatialLength: function (currentEntry, env) {
-         var mode = this.env !== 'dev' ? "" : env;
-          var mapSpatialDetails = fetchContourLevel(currentEntry, 0, false, mode, false, true);
-          this.mapSpatialStart = mapSpatialDetails['ncstart'];
-          this.mapSpatialColumns = mapSpatialDetails['nx'];
-          return Math.round(mapSpatialDetails['xlen']);
-     },
-    ready: function () {
-          var mode = this.env !== 'dev' ? "" : this.env;
-
-          this.thr = fetchContourLevel(this.currentEntry, 0, true, mode, false, false);
-          this.sliderValue = fetchContourLevel(this.currentEntry, this.thr, false, mode, true, false);
-          this.isInitialLoad = false;
-      },
-    updateContourLevel: function(){
-        if (! this.isInitialLoad) {
-            var mode = this.env !== 'dev' ? "" : this.env;
-            this.thr = fetchContourLevel(this.currentEntry, this.sliderValue, false, mode, false, false);
-            var mapSpatialDetails = fetchContourLevel(this.currentEntry, this.sliderValue, false, mode, false, true);
-            this.mapSpatialLength = Math.round(mapSpatialDetails['xlen']);
-            this.mapSpatialStart = mapSpatialDetails['ncstart'];
-        }
-    },
-    computeApiUrl: function(env, entry){
-        var mode = env !== 'dev' ? "" : env;
-        return ["//www" + mode + ".ebi.ac.uk/pdbe/api/emdb/entry/map", entry].join('/');
-    },
-    computeMeshUrl: function(env, entry, thr){
-        var mode = env !== 'dev' ? "" : env;
-        return ["//www" + mode + ".ebi.ac.uk/pdbe/emdb-entry", entry, "3dviewer", thr.toFixed(1) + ".stl"].join('/');
-    },
-      computePdbeModelUrls: function (env, currentEntry, thr, pdbemodelliststr) {
-          var mode = env !== 'dev' ? "" : env;
-          var modelUrlsList = new Array();
-          var pdbemodellist = pdbemodelliststr.split(',');
-
-          //var cLevel = fetchContourLevel(this.currentEntry, thr, true, mode, false);
-          var mapUrl;
-          if (thr.toString().includes('.'))
-        	  mapUrl = "https://www" + mode + ".ebi.ac.uk/pdbe/emdb-entry/" + this.currentEntry + "/vtp/" + (this.currentEntry.replace('-', '_')).toLowerCase() + "_" + thr + ".vtp";
-          else
-        	  mapUrl = "https://www" + mode + ".ebi.ac.uk/pdbe/emdb-entry/" + this.currentEntry + "/vtp/" + (this.currentEntry.replace('-', '_')).toLowerCase() + "_" + thr + ".0.vtp";
-          modelUrlsList.push(mapUrl);
-
-          if (pdbemodellist.length > 1) {
-              var pdbeModels = [];
-              for (var i = 1; i < pdbemodellist.length; i++) {
-                  modelUrlsList.push(["//www" + mode + ".ebi.ac.uk/pdbe/emdb-entry", this.currentEntry, "volume", this.currentEntry.toLowerCase().replace("-", "") + "_" + pdbemodellist[i] + "_backboneTrace.sch"].join('/'));
-                  pdbeModels.push(pdbemodellist[i]);
-              }
-          }
-          return modelUrlsList;
-
-      },
-    fetchInfoLable: function(modelids){
-    	if (modelids.length == 0)
-    		return "";
-    	else
-    		return "Model(s):";
-    },
-    computedModelIds: function(pdbemodelurls)
-    {
-		var fitModels = [];
-    	for(var i=1; i<pdbemodelurls.length; i++)
-			{
-			    var xmlhttp = new XMLHttpRequest();
-			    
-			    //nedd a fix for making the below async
-				/* xmlhttp.onreadystatechange = function() {	
-			        if (xmlhttp.readyState == XMLHttpRequest.DONE ) {
-			           if (xmlhttp.status == 200) {
-			        	   fitModels.push('test');
-			           }
-			           else if (xmlhttp.status == 404) {
-			              alert('There was an error 404');
-			        	   fitModels.push('test2');
-			           }
-			           else {
-			               alert('something else other than 200 was returned');
-			        	   fitModels.push('test3');
-			           }
-			        }
-			    }; */
-	
-			    xmlhttp.open("GET", "https:" + pdbemodelurls[i], false);
-			    xmlhttp.send();
-			    if(xmlhttp.status != 404)
-			    	fitModels.push(xmlhttp.responseURL.split('_')[1]);
-			}
-    	return fitModels;
-    },
-    displayStats: function(){
-        var mapSection = this.stats[this.entry][0]['map'];
-        var mapStatistics = mapSection['statistics'];
-        var mx = {
-            mean: mapStatistics['average'].toFixed(2),
-            max: mapStatistics['maximum'].toFixed(2),
-            sigma: mapStatistics['standard_deviation'].toFixed(2),
-            min: mapStatistics['minimum'].toFixed(2),
-        }
-        if ( 'contour_level' in mapSection){
-            mx.rec = mapSection.contour_level.value;
-        }
-        else {
-            mx.rec = "Not provided";
-        }
-        this.dStats=mx;
-    },
-    wireframeChange: function(){
-      this.wireframe = !this.wireframe;
-    },
-    clippedChange: function(){
-      this.clipped = !this.clipped;
-    }
-  });
-  function handleOverlay(elementId)
-  {
-	  var threeRenderer = document.getElementsByTagName('three-renderer')[0];
-	  var threeRendererPHOld = document.getElementById('three-renderer-placeholder-old');
-	  var threeRendererPHNew = document.getElementById('three-renderer-placeholder-new');
-	  if(elementId == 'overlay-open-icon') {
- 		  if(threeRendererPHNew.children.length == 0)
- 			  {
-				  threeRendererPHNew.appendChild(threeRenderer);
- 			  }
-	  }
-	  else{
-		  if(threeRendererPHOld.children.length == 0)
-			  {
-					threeRendererPHOld.appendChild(threeRenderer);
-			  }
-	  }
-  }
-  
-  function fetchContourLevel(entryId, index, defaultLoad, mode, isKeyRequired, getSpatialDetails) {
-      var cLevel;
-      $.ajax({
-            context: this,
-            async: false,
-            url: "https://www" + mode + ".ebi.ac.uk/pdbe/emdb-entry/" + entryId + "/vtp/" + entryId + ".json",
-            error: function () {
-                console.log('Unable to load feed, Incorrect path or invalid feed');
-            },
-            success: function (data) {
-                if (getSpatialDetails) {
-                    cLevel = data['map_spatial_values'];
-                }
-                else {
-                    if (defaultLoad)
-                        cLevel = data['reclevel'];
-                    else {
-                        if (isKeyRequired) {
-                            var dict = data['clevels'];
-                            for (i = 0; i < dict.length; i++) {
-                                if (dict[i] == index)
-                                    cLevel = i;
-                            }
-                        }
-                        else
-                            cLevel = data['clevels'][index];
-                    }
-                }
+        <style is="custom-style">
+            :host {
+                position: relative;
+                float: left;
+                /*           width: 1000px;
+                          height:850px; */
+                position: absolute;
+                top: 0px;
+                left: 1012px;
             }
-        });
-      return cLevel;
-  }
+
+            .renderer_div {
+                width: 1000px;
+                height: 600px;
+                float: left;
+                position: relative;
+                /*Disable focus frame*/
+                outline: none;
+                border: none;
+                /*Disable text selection*/
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+
+            .flex-horizontal {
+                @apply(--layout-horizontal);
+            }
+
+            .flexchild {
+                @apply(--layout-flex);
+            }
+
+            .title-container {
+                height: 45px;
+            }
+
+            iron-selector > * {
+                padding: 8px;
+            }
+
+            .horizontal-section {
+                padding: 10px;
+            }
+
+            .reduced-top-padding {
+                padding-top: 0px;
+            }
+
+            .iron-selected {
+                background-color: var(--google-blue-500);
+                color: white;
+            }
+
+            #stats {
+                list-style: none;
+                padding: 0;
+
+            }
+
+            #three-view-container {
+                background: #ededed;
+                /* border: 1px solid #888; */
+                min-width: 311px;
+                max-width: 311px;
+                float: right;
+            }
+
+            #three-view-container-expanded {
+                background: #ededed;
+                float: right;
+            }
+
+            #three-view-title {
+                background: #ededed;
+                padding: 10px;
+            }
+
+            #image-placeholder {
+                heigth: 193px;
+                width: 290px;
+                display: none;
+            }
+
+            paper-checkbox.blue {
+                --paper-checkbox-checked-color: var(--paper-blue-500);
+                --paper-checkbox-checked-ink-color: var(--paper-blue-500);
+                --paper-checkbox-unchecked-color: var(--paper-blue-900);
+                --paper-checkbox-unchecked-ink-color: var(--paper-blue-900);
+                --paper-checkbox-label-color: var(--paper-blue-500);
+                --paper-checkbox-label-checked-color: var(--paper-blue-900);
+            }
+        </style>
+
+        <div id='three-view-container'>
+            <div id='three-view-container-expanded'>
+                <div id="three-view-title">
+                    <h3>3D Viewer
+                    </h3>
+                </div>
+                <div class="container flex-horizontal">
+                    <div id="three-renderer-placeholder-new" class="horizontal-section">
+                        <three-renderer id="three-renderer-map"
+                                        file-path="{{ filePath }}"
+                                        wireframe="{{ wireframe }}"
+                                        alpha="{{ alpha }}"
+                                        map-colour="{{ mapcolor }}"
+                                        bkg-colour="{{ bkgcolor }}"
+                                        clipped="{{ clipped }}"
+                                        near-clip-plane="{{ near }}"
+                                        far-clip-plane="{{ far }}"
+                                        resize-flag="{{ resizeFlag }}">
+                        </three-renderer>
+                    </div>
+                </div>
+                <div class="container flex-horizontal">
+                    <div class="horizontal-section">
+                        Wireframe
+                        <paper-toggle-button on-change="wireframeChange" noink></paper-toggle-button>
+
+                        Opacity Level
+                        <paper-slider pin value="{{ alpha }}" min="0.0" max="1.0" step="0.1"></paper-slider>
+
+                        Map colour:
+                        <paper-swatch-picker color="{{ mapcolor }}"></paper-swatch-picker>
+
+                        Background colour:
+                        <paper-swatch-picker color="{{ bkgcolor }}"></paper-swatch-picker>
+
+                    </div>
+                    <div class="horizontal-section">
+                        Clipped view
+                        <paper-toggle-button on-change="clippedChange" noink></paper-toggle-button>
+
+                        Clipping Front Plane
+                        <paper-slider id="clipcont" pin value="{{ near }}" min="-50.0" max="50.0" step="0.01"
+                                      disabled="{{ clipped }}" editable></paper-slider>
+
+                        Clipping Back Plane
+                        <paper-slider id="boxdepth" pin value="{{ far }}" min="-50.0" max="50.0" step="0.01"
+                                      disabled="{{ clipped }}" editable></paper-slider>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</dom-module>
+<script>
+    Polymer({
+        is: 'webgl-viewer',
+
+        properties: {
+            wireframe: {
+                type: Boolean,
+                value: false,
+                notify: true
+            },
+            mapcolor: {
+                type: String,
+                value: '#303f9f',
+                notify: true
+            },
+            bkgcolor: {
+                type: String,
+                //value: '#f3e5f5',
+                value: '#9e9e9e',
+                notify: true
+            },
+            clipped: {
+                type: Boolean,
+                value: true,
+                notify: true
+            },
+            alpha: {
+                value: 1.0,
+                notify: true
+            },
+            near: {
+                value: 0.5,
+                notify: true
+            },
+            far: {
+                value: -0.5,
+                notify: true
+            },
+            stats: {
+                type: Object,
+                notify: true,
+                observer: 'displayStats'
+            },
+            dStats: {
+                value: {
+                    rec: '',
+                    mean: '',
+                    max: '',
+                    sigma: '',
+                    min: ''
+                },
+                notify: true
+            },
+            filePath: {
+                type: String,
+                notify: true
+            },
+        },
+        wireframeChange: function () {
+            this.wireframe = !this.wireframe;
+        },
+        clippedChange: function () {
+            this.clipped = !this.clipped;
+        }
+
+    });
 
 </script>
