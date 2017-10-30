@@ -10,7 +10,7 @@ How to use this demo
 
 .. code:: bash
 
-	git clone 
+	git clone https://github.com/emdb-empiar/ccpem3D.git
 
 2. Enter ccpe3D directory then start webserver
 
@@ -25,6 +25,6 @@ Navigate to http://localhost:8000 (or whatever host:port combination specified)
 
 .. code:: bash
 
-	meshmake -c 12.3 file.map --vtp -o file
+	meshmaker -c 12.3 file.map --vtp -o file
 
 4. From your browser find a *VTP* file then click *View*. 
