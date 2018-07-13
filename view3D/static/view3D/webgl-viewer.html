@@ -1,5 +1,5 @@
 <link rel="import" href="bower_components/polymer/polymer.html">
-<link rel="import" href="three-renderer.html">
+<link rel="import" href="vtk-renderer.html">
 <link rel="import" href="bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="bower_components/paper-slider/paper-slider.html">
 <link rel="import" href="bower_components/paper-toggle-button/paper-toggle-button.html">
@@ -17,28 +17,9 @@
             :host {
                 position: relative;
                 float: left;
-                /*           width: 1000px;
-                          height:850px; */
                 position: absolute;
                 top: 0px;
                 left: 1012px;
-            }
-
-            .renderer_div {
-                width: 1000px;
-                height: 600px;
-                float: left;
-                position: relative;
-                /*Disable focus frame*/
-                outline: none;
-                border: none;
-                /*Disable text selection*/
-                -webkit-touch-callout: none;
-                -webkit-user-select: none;
-                -khtml-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                user-select: none;
             }
 
             .flex-horizontal {
@@ -94,12 +75,6 @@
                 padding: 10px;
             }
 
-            #image-placeholder {
-                heigth: 193px;
-                width: 290px;
-                display: none;
-            }
-
             paper-checkbox.blue {
                 --paper-checkbox-checked-color: var(--paper-blue-500);
                 --paper-checkbox-checked-ink-color: var(--paper-blue-500);
@@ -117,47 +92,45 @@
                     </h3>
                 </div>
                 <div class="container flex-horizontal">
-                    <div id="three-renderer-placeholder-new" class="horizontal-section">
-                        <three-renderer id="three-renderer-map"
-                                        file-path="{{ filePath }}"
-                                        wireframe="{{ wireframe }}"
-                                        alpha="{{ alpha }}"
-                                        map-colour="{{ mapcolor }}"
-                                        bkg-colour="{{ bkgcolor }}"
-                                        clipped="{{ clipped }}"
-                                        near-clip-plane="{{ near }}"
-                                        far-clip-plane="{{ far }}"
-                                        resize-flag="{{ resizeFlag }}">
-                        </three-renderer>
+                    <div style="height: 700px; width:700px;" class="horizontal-section">
+                        <vtk-renderer id="three-renderer-map"
+                                      meshurl="{{ filePath }}"
+                                      wireframe="{{ wireframe }}"
+                                      alpha="{{ alpha }}"
+                                      map-colour="{{ mapcolor }}"
+                                      bkg-colour="{{ bkgcolor }}"
+                                      clipped="{{ clipped }}"
+                                      near-clip-plane="{{ near }}"
+                                      far-clip-plane="{{ far }}"
+                                      resize-flag="{{ resizeFlag }}">
+                        </vtk-renderer>
                     </div>
                 </div>
-                <div class="container flex-horizontal">
-                    <div class="horizontal-section">
-                        Wireframe
-                        <paper-toggle-button on-change="wireframeChange" noink></paper-toggle-button>
-
-                        Opacity Level
-                        <paper-slider pin value="{{ alpha }}" min="0.0" max="1.0" step="0.1"></paper-slider>
-
-                        Map colour:
-                        <paper-swatch-picker color="{{ mapcolor }}"></paper-swatch-picker>
-
-                        Background colour:
-                        <paper-swatch-picker color="{{ bkgcolor }}"></paper-swatch-picker>
-
-                    </div>
-                    <div class="horizontal-section">
-                        Clipped view
-                        <paper-toggle-button on-change="clippedChange" noink></paper-toggle-button>
-
-                        Clipping Front Plane
-                        <paper-slider id="clipcont" pin value="{{ near }}" min="-50.0" max="50.0" step="0.01"
-                                      disabled="{{ clipped }}" editable></paper-slider>
-
-                        Clipping Back Plane
-                        <paper-slider id="boxdepth" pin value="{{ far }}" min="-50.0" max="50.0" step="0.01"
-                                      disabled="{{ clipped }}" editable></paper-slider>
-                    </div>
+                <div class="controls-div">
+                    <table>
+                        <tr>
+                            <td>Wireframe</td>
+                            <td>
+                                <paper-toggle-button on-change="wireframeChange" noink></paper-toggle-button>
+                            </td>
+                            <td>Opacity Level</td>
+                            <td>
+                                <paper-slider pin value="{{ alpha }}" min="0" max="100" step="10"></paper-slider>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Map colour</td>
+                            <td>
+                                <paper-swatch-picker color="{{ mapcolor }}"></paper-swatch-picker>
+                            </td>
+                            <td>Background colour</td>
+                            <td>
+                                <paper-swatch-picker color="{{ bkgcolor }}"></paper-swatch-picker>
+                            </td>
+                        </tr>
+                        <tr></tr>
+                        <tr></tr>
+                    </table>
                 </div>
             </div>
         </div>
@@ -168,6 +141,10 @@
         is: 'webgl-viewer',
 
         properties: {
+            filePath: {
+                type: String,
+                notify: true
+            },
             wireframe: {
                 type: Boolean,
                 value: false,
@@ -190,7 +167,7 @@
                 notify: true
             },
             alpha: {
-                value: 1.0,
+                value: 100,
                 notify: true
             },
             near: {
@@ -216,17 +193,14 @@
                 },
                 notify: true
             },
-            filePath: {
-                type: String,
-                notify: true
-            },
         },
         wireframeChange: function () {
             this.wireframe = !this.wireframe;
         },
         clippedChange: function () {
             this.clipped = !this.clipped;
-        }
+        },
+
 
     });
 

@@ -13,7 +13,12 @@
 		<link rel="import" href="{% static 'view3D/bower_components/iron-selector/iron-selector.html' %}">
 		<link rel="import" href="{% static 'view3D/bower_components/paper-checkbox/paper-checkbox.html' %}">
         <link rel="import" href="{% static 'view3D/webgl-viewer.html' %}">
-
+        <style type="text/css">
+            .renderer-div{
+                height: 600px;
+                width: 600px;
+            }
+        </style>
 	</head>
 	<body>
 		<form method="post" enctype="multipart/form-data">
@@ -24,10 +29,7 @@
         {% if not image_file %}
 			<p>No file present. Please upload one then click 'view'.</p>
 		{% else %}
-			<p>
-				<!-- <img src="/static/view3D/images/{{ image_file }}" title="{{ image_file }}"> -->
-				<webgl-viewer file-path="/static/view3d/images/{{ image_file }}"></webgl-viewer>
-			</p>
-		{% endif %}
+            <webgl-viewer file-path="/static/view3d/images/{{ image_file }}"></webgl-viewer>
+        {% endif %}
 	</body>
 </html>

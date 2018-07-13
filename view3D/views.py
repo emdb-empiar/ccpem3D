@@ -4,6 +4,7 @@ from django import forms
 
 import os
 
+
 class FileForm(forms.Form):
     vtp_file = forms.FileField(label="VTP File:")
 
@@ -12,6 +13,7 @@ def handle_uploaded_file(f):
     with open(os.path.join(os.path.dirname(__file__), 'static', 'view3D', 'images', f.name), 'wb+') as destination:
         for chunk in f.chunks():
             destination.write(chunk)
+
 
 class Index(FormView):
     form_class = FileForm
