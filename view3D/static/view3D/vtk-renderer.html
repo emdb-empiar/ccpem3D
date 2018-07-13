@@ -1,0 +1,385 @@
+<script src="vtk/vtk.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.0/jquery.min.js"></script>
+
+<dom-module id="vtk-renderer">
+    <template>
+        <style>
+            label.selector {
+                font-size: 12px;
+                text-overflow: ellipsis;
+                opacitySelector overflow: hidden;
+            }
+
+            .dark {
+                composes: selector;
+                color: white;
+                display: none;
+            }
+
+            .dark option {
+                color: black;
+            }
+        </style>
+        <content></content>
+        <div id="visual-container" class="vis-container-small"></div>
+    </template>
+</dom-module>
+<script>
+    var vtkFullScreenRenderWindow = vtk.Rendering.Misc.vtkFullScreenRenderWindow;
+    var vtkActor = vtk.Rendering.Core.vtkActor;
+    var vtkMapper = vtk.Rendering.Core.vtkMapper;
+    var vtkXMLPolyDataReader = vtk.IO.XML.vtkXMLPolyDataReader;
+    var vtkColorTransferFunction = vtk.Rendering.Core.vtkColorTransferFunction;
+    var vtkPlane = vtk.Common.DataModel.vtkPlane;
+    var vtkCellPicker = vtk.Rendering.Core.vtkCellPicker;
+    var fullScreenRenderer;
+    let autoInit = true;
+    let background = hexToRgb('#212121');
+    let renderWindow;
+    let renderer;
+    var pipeline = {};
+    var rootControllerContainer;
+    var addDataSetButton;
+    var actor;
+    var mapper;
+    var nearPlane;
+    var farPlane;
+    picker = vtkCellPicker.newInstance();
+    picker.setPickFromList(1);
+    picker.initializePickList();
+    Polymer({
+        is: 'vtk-renderer',
+        properties: {
+            meshurl: {
+                type: String,
+            },
+            wireframe: {
+                type: Boolean,
+                observer: 'switchWireframe'
+            },
+            alpha: {
+                type: Number,
+                observer: 'changeAlphaChannel'
+            },
+            mapColour: {
+                type: String,
+                value: '#80deea',
+                notify: true,
+                observer: 'changeMapColour'
+            },
+            bkgColour: {
+                type: String,
+                value: '#212121',
+                notify: true,
+                observer: 'changeBackgroundColour'
+            },
+            clipped: {
+                type: Boolean,
+                observer: 'switchClipped'
+            },
+            nearClipPlane: {
+                notify: true,
+                observer: 'changeNearClipPlane'
+            },
+            farClipPlane: {
+                notify: true,
+                observer: 'changeFarClipPlane'
+            },
+            id: {
+                type: String
+            },
+            env: {
+                type: String,
+            },
+            mode: {
+                type: String,
+            },
+            mapSpatialLength: {
+                type: Number,
+            },
+            mapSpatialStart: {
+                type: Number,
+            },
+            mapSpatialColumns: {
+                type: Number,
+                value: 0
+            },
+            isActorClickable: {
+                type: Boolean,
+                value: false
+            },
+            checkForVtp: {
+                type: Boolean,
+                notify: true,
+            },
+        },
+        observers: [
+            'loadRenderer(meshurl)'
+        ],
+        changeNearClipPlane: function(){
+           if (typeof actor != 'undefined') {
+               var cPlane = mapper.getClippingPlanes()[0];
+               cPlane.setOrigin(0,0, (this.nearClipPlane * 10));
+               renderWindow.render();
+           }
+        },
+        changeFarClipPlane: function(){
+            if (typeof actor != 'undefined') {
+               var cPlane = mapper.getClippingPlanes()[1];
+               cPlane.setOrigin(0,0, (this.farClipPlane * 10));
+               renderWindow.render();
+           }
+        },
+        switchClipped: function(){
+            if (typeof actor != 'undefined') {
+                this.attached();
+            }
+        },
+        switchWireframe: function () {
+            if (typeof actor != 'undefined') {
+                if (this.wireframe) {
+                    const representation = 1;
+                    const edgeVisibility = 0;
+                    const visibility = 1;
+                    actor.getProperty().set({representation, edgeVisibility});
+                    actor.setVisibility(!!visibility);
+                    renderWindow.render();
+                }
+                else {
+                    const representation = 2;
+                    const edgeVisibility = 0;
+                    const visibility = 1;
+                    actor.getProperty().set({representation, edgeVisibility});
+                    actor.setVisibility(!!visibility);
+                    renderWindow.render();
+                }
+            }
+        },
+        changeMapColour: function () {
+            var color = hexToRgb(this.mapColour);
+            if (typeof actor != 'undefined') {
+                actor.getProperty().setColor(color[0], color[1], color[2]);
+                renderWindow.render();
+            }
+        },
+        changeBackgroundColour: function () {
+            var color = hexToRgb(this.bkgColour);
+            if (typeof actor != 'undefined') {
+                fullScreenRenderer.setBackground(color);
+                renderWindow.render();
+            }
+        },
+        changeAlphaChannel: function () {
+            if (typeof actor != 'undefined') {
+                const opacity = Number(this.alpha) / 100;
+                actor.getProperty().setOpacity(opacity);
+                renderWindow.render();
+            }
+        },
+        ready: function () {
+            rootControllerContainer = document.createElement('div');
+            rootControllerContainer.setAttribute('class', 'rootController');
+            addDataSetButton = document.createElement('button');
+            addDataSetButton.setAttribute('style', 'display:none');
+            addDataSetButton.addEventListener('click', () => {
+                const isVisible = rootControllerContainer.style.display !== 'none';
+                rootControllerContainer.style.display = isVisible ? 'none' : 'flex';
+            });
+        },
+        attached: function () {
+            var url = this.meshurl.split(',');
+            var clippedValue = this.clipped;
+            var near = (this.nearClipPlane * 10);
+            var far = (this.farClipPlane * 10);
+            initiateLoader();
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function initiateLoader() {
+                var containerElement = document.getElementById('visual-container');
+                load(containerElement, url);
+            }
+
+            function loadFileFromUrl(url) {
+                var blob = null;
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", url);
+                xhr.responseType = "blob";//force the HTTP response, response-type header to be blob
+                xhr.onload = function () {
+                    blob = xhr.response;//xhr.response is now a blob object
+                    const reader = new FileReader();
+                    reader.onload = function onLoad(e) {
+                        var urlParts = url.split("/");
+                        createPipeline(urlParts[urlParts.length - 1].split(".vtp")[0], reader.result);
+                    };
+                    reader.readAsArrayBuffer(blob);
+                }
+                xhr.send();
+            }
+
+            function load(container, options) {
+                autoInit = false;
+                emptyContainer(container);
+
+                if (options.length > 0) {
+                    createViewer(container);
+                    let count = url.length;
+                    while (count--) {
+                        loadFileFromUrl(url[count]);
+                    }
+                    updateCamera(renderer.getActiveCamera());
+                }
+                if (this.isActorClickable) {
+                    // Pick on mouse right click
+                    renderWindow.getInteractor().onRightButtonPress((callData) => {
+                        if (renderer !== callData.pokedRenderer) {
+                            return;
+                        }
+                        const pos = callData.position;
+                        const point = [pos.x, pos.y, 0.0];
+                        picker.pick(point, renderer);
+                        if (picker.getActors().length > 0) {
+                            var intersectingActors = picker.getActors();
+                            var selectedActor = intersectingActors[intersectingActors.length - 1];
+                            var selectedColor = [1, 1, 0];
+                            var actorColor = selectedActor.getProperty().getColor();
+                            var color = hexToRgb('#80deea');
+
+                            if (actorColor[0] == selectedColor[0] &&
+                                actorColor[1] == selectedColor[1] &&
+                                actorColor[2] == selectedColor[2]) {
+                                selectedActor.getProperty().setColor(
+                                    color[0],
+                                    color[1],
+                                    color[2]);
+                                renderWindow.render();
+                            }
+                            else {
+                                for (var key in pipeline) {
+                                    var surfaceColor = pipeline[key].actor.getProperty().getColor();
+                                    if (surfaceColor[0] == 1.0 &&
+                                        surfaceColor[1] == 1.0 &&
+                                        surfaceColor[2] == 0.0)
+                                        pipeline[key].actor.getProperty().setColor(
+                                            color[0],
+                                            color[1],
+                                            color[2]);
+                                }
+                                selectedActor.getProperty().setColor(1.0, 1.0, 0.0);
+                                renderWindow.render();
+                            }
+                            highlightCounter += 1;
+                        }
+                    });
+                }
+            }
+
+            function emptyContainer(container) {
+                while (container.firstChild) {
+                    container.removeChild(container.firstChild);
+                }
+            }
+
+            function createViewer(container) {
+                fullScreenRenderer = vtkFullScreenRenderWindow.newInstance({
+                    background,
+                    rootContainer: container,
+                    containerStyle: {height: '100%', width: '100%'},
+                });
+                renderer = fullScreenRenderer.getRenderer();
+                renderWindow = fullScreenRenderer.getRenderWindow();
+                renderWindow.getInteractor().setDesiredUpdateRate(15);
+
+                container.appendChild(rootControllerContainer);
+                container.appendChild(addDataSetButton);
+            }
+
+            function createPipeline(fileName, fileContents) {
+
+                // VTK pipeline
+                const vtpReader = vtkXMLPolyDataReader.newInstance();
+                vtpReader.parseAsArrayBuffer(fileContents);
+
+                const lookupTable = vtkColorTransferFunction.newInstance();
+                const source = vtpReader.getOutputData(0);
+                mapper = vtkMapper.newInstance({
+                    interpolateScalarsBeforeMapping: false,
+                    useLookupTableScalarRange: true,
+                    lookupTable,
+                    scalarVisibility: false,
+                });
+                mapper.setColorModeToDefault();
+
+                actor = vtkActor.newInstance();
+                const scalars = source.getPointData().getScalars();
+                const dataRange = [].concat(scalars ? scalars.getRange() : [0, 1]);
+
+                // --------------------------------------------------------------------
+                // Pipeline handling
+                // --------------------------------------------------------------------
+
+                actor.setMapper(mapper);
+                var mapColorRgb = hexToRgb('#80deea');
+                actor.getProperty().setColor(mapColorRgb[0], mapColorRgb[1], mapColorRgb[2]);
+                mapper.setInputData(source);
+                if (!clippedValue){
+                    nearPlane = vtkPlane.newInstance();
+                    nearPlane.setOrigin(0.0, 0.0, near);
+                    nearPlane.setNormal(0.0, 0.0, 1.0);
+                    farPlane = vtkPlane.newInstance();
+                    farPlane.setOrigin(0.0, 0.0, far);
+                    farPlane.setNormal(0.0, 0.0, -1.0);
+                    mapper.addClippingPlane(nearPlane);
+                    mapper.addClippingPlane(farPlane);
+                }
+                renderer.addActor(actor);
+
+                // ----------------------------------------------------------------------------
+                // Setup picking interaction
+                // ----------------------------------------------------------------------------
+                // Only try to pick cone
+                picker.addPickList(actor);
+
+                // Manage update when lookupTable change
+                lookupTable.onModified(() => {
+                    renderWindow.render();
+                });
+
+                // First render
+                renderer.resetCamera();
+                renderWindow.render();
+
+                pipeline[fileName] = {
+                    actor,
+                    mapper,
+                    source,
+                    lookupTable,
+                    renderer,
+                    renderWindow,
+                };
+            }
+
+            function updateCamera(camera) {
+                ['zoom', 'pitch', 'elevation', 'yaw', 'azimuth', 'roll', 'dolly'].forEach(
+                    (key) => {
+                        renderWindow.render();
+                    }
+                );
+            }
+        },
+    });
+
+    function hexToRgb(hex) {
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? [
+                parseFloat(parseInt(result[1], 16) / 255).toFixed(3),
+                parseFloat(parseInt(result[2], 16) / 255).toFixed(3),
+                parseFloat(parseInt(result[3], 16) / 255).toFixed(3),
+            ]
+            : [0, 0, 0];
+    }
+
+</script>
