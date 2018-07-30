@@ -21,7 +21,8 @@
             }
         </style>
         <content></content>
-        <div id="visual-container" class="vis-container-small"></div>
+        <div id="visual-container" class="vis-container-small">
+        </div>
     </template>
 </dom-module>
 <script>
@@ -32,6 +33,11 @@
     var vtkColorTransferFunction = vtk.Rendering.Core.vtkColorTransferFunction;
     var vtkPlane = vtk.Common.DataModel.vtkPlane;
     var vtkCellPicker = vtk.Rendering.Core.vtkCellPicker;
+    var vtkPDBReader = vtk.IO.Misc.vtkPDBReader;
+    var vtkMoleculeToRepresentation = vtk.Filters.General.vtkMoleculeToRepresentation;
+    var vtkSphereMapper = vtk.Rendering.Core.vtkSphereMapper;
+    var vtkStickMapper = vtk.Rendering.Core.vtkStickMapper;
+
     var fullScreenRenderer;
     let autoInit = true;
     let background = hexToRgb('#212121');
@@ -52,6 +58,12 @@
         properties: {
             meshurl: {
                 type: String,
+            },
+            modelurl: {
+                type: String,
+            },
+            modelId:{
+                type:String,
             },
             wireframe: {
                 type: Boolean,
@@ -116,21 +128,21 @@
         observers: [
             'loadRenderer(meshurl)'
         ],
-        changeNearClipPlane: function(){
-           if (typeof actor != 'undefined') {
-               var cPlane = mapper.getClippingPlanes()[0];
-               cPlane.setOrigin(0,0, (this.nearClipPlane * 10));
-               renderWindow.render();
-           }
-        },
-        changeFarClipPlane: function(){
+        changeNearClipPlane: function () {
             if (typeof actor != 'undefined') {
-               var cPlane = mapper.getClippingPlanes()[1];
-               cPlane.setOrigin(0,0, (this.farClipPlane * 10));
-               renderWindow.render();
-           }
+                var cPlane = mapper.getClippingPlanes()[0];
+                cPlane.setOrigin(0, 0, (this.nearClipPlane * 10));
+                renderWindow.render();
+            }
         },
-        switchClipped: function(){
+        changeFarClipPlane: function () {
+            if (typeof actor != 'undefined') {
+                var cPlane = mapper.getClippingPlanes()[1];
+                cPlane.setOrigin(0, 0, (this.farClipPlane * 10));
+                renderWindow.render();
+            }
+        },
+        switchClipped: function () {
             if (typeof actor != 'undefined') {
                 this.attached();
             }
@@ -191,6 +203,7 @@
             var clippedValue = this.clipped;
             var near = (this.nearClipPlane * 10);
             var far = (this.farClipPlane * 10);
+            var that = this;
             initiateLoader();
 
             function preventDefaults(e) {
@@ -325,7 +338,7 @@
                 var mapColorRgb = hexToRgb('#80deea');
                 actor.getProperty().setColor(mapColorRgb[0], mapColorRgb[1], mapColorRgb[2]);
                 mapper.setInputData(source);
-                if (!clippedValue){
+                if (!clippedValue) {
                     nearPlane = vtkPlane.newInstance();
                     nearPlane.setOrigin(0.0, 0.0, near);
                     nearPlane.setNormal(0.0, 0.0, 1.0);
@@ -334,6 +347,7 @@
                     farPlane.setNormal(0.0, 0.0, -1.0);
                     mapper.addClippingPlane(nearPlane);
                     mapper.addClippingPlane(farPlane);
+
                 }
                 renderer.addActor(actor);
 
@@ -351,6 +365,9 @@
                 // First render
                 renderer.resetCamera();
                 renderWindow.render();
+                if (that.modelurl != '' && that.clipped)
+                    that.loadModels();
+
 
                 pipeline[fileName] = {
                     actor,
@@ -368,6 +385,49 @@
                         renderWindow.render();
                     }
                 );
+            }
+        },
+        loadModels: function () {
+            if (typeof(actor) != 'undefined') {
+                const reader = vtkPDBReader.newInstance();
+                const filter = vtkMoleculeToRepresentation.newInstance();
+                const sphereMapper = vtkSphereMapper.newInstance();
+                const stickMapper = vtkStickMapper.newInstance();
+                const sphereActor = vtkActor.newInstance();
+                const stickActor = vtkActor.newInstance();
+
+                filter.setInputConnection(reader.getOutputPort());
+                filter.setHideElements(['H']);
+
+                // render sphere
+                sphereMapper.setInputConnection(filter.getOutputPort(0));
+                sphereMapper.setScaleArray(filter.getSphereScaleArrayName());
+                sphereActor.setMapper(sphereMapper);
+
+                // render sticks
+                stickMapper.setInputConnection(filter.getOutputPort(1));
+                stickMapper.setScaleArray('stickScales');
+                stickMapper.setOrientationArray('orientation');
+                stickActor.setMapper(stickMapper);
+
+                reader.setUrl(this.modelurl).then(() => {
+                    renderer.resetCamera();
+                    renderWindow.render();
+                });
+
+                renderer.addActor(sphereActor);
+                renderer.addActor(stickActor);
+                renderer.resetCamera();
+                renderWindow.render();
+
+                pipeline[this.modelId] = {
+                    sphereActor,
+                    stickActor,
+                    sphereMapper,
+                    stickMapper,
+                    renderer,
+                    renderWindow,
+                };
             }
         },
     });

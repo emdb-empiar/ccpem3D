@@ -102,7 +102,9 @@
                                       clipped="{{ clipped }}"
                                       near-clip-plane="{{ near }}"
                                       far-clip-plane="{{ far }}"
-                                      resize-flag="{{ resizeFlag }}">
+                                      resize-flag="{{ resizeFlag }}"
+                                      modelurl="{{ modelFilePath }}"
+                                      model-id="{{ modelId }}">
                         </vtk-renderer>
                     </div>
                 </div>
@@ -112,13 +114,16 @@
                         <paper-toggle-button on-change="wireframeChange" noink></paper-toggle-button>
 
                         Opacity Level
-                        <paper-slider pin value="{{ alpha }}" min="0.0" max="1.0" step="0.1"></paper-slider>
+                        <paper-slider pin value="{{ alpha }}" min="00" max="100" step="10"></paper-slider>
 
                         Map colour:
                         <paper-swatch-picker color="{{ mapcolor }}"></paper-swatch-picker>
 
                         Background colour:
                         <paper-swatch-picker color="{{ bkgcolor }}"></paper-swatch-picker>
+
+                        Model:
+                        <label>{{ modelId }}</label>
 
                     </div>
                     <div class="horizontal-section">
@@ -145,6 +150,16 @@
         properties: {
             filePath: {
                 type: String,
+                notify: true
+            },
+            modelFilePath: {
+                type: String,
+                value: '',
+                notify: true
+            },
+            modelId:{
+                type:String,
+                value: 'NA',
                 notify: true
             },
             wireframe: {
